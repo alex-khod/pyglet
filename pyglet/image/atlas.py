@@ -23,7 +23,7 @@ the application's responsibility to keep track of the regions returned by the
 
 .. versionadded:: 1.1
 """
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, Callable
 
 import pyglet
 
@@ -145,7 +145,9 @@ class Allocator:
 class TextureAtlas:
     """Collection of images within a texture."""
 
-    def __init__(self, width: int = 2048, height: int = 2048):
+    TextureFactory = Callable[[int, int], 'Texture']
+
+    def __init__(self, width: int = 2048, height: int = 2048, texture_factory: 'TextureFactory' = None):
         """Create a texture atlas of the given size.
 
         :Parameters:
@@ -159,7 +161,7 @@ class TextureAtlas:
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
-        self.texture = pyglet.image.Texture.create(width, height)
+        self.texture = texture_factory(width, height) if texture_factory else pyglet.image.Texture.create(width, height)
         self.allocator = Allocator(width, height)
 
     def add(self, img: 'AbstractImage', border: int = 0) -> 'TextureRegion':
@@ -194,7 +196,9 @@ class TextureBin:
     ones as necessary to accommodate images added to the bin.
     """
 
-    def __init__(self, texture_width: int = 2048, texture_height: int = 2048):
+    AtlasFactory = Callable[[int, int], 'TextureAtlas']
+
+    def __init__(self, texture_width: int = 2048, texture_height: int = 2048, atlas_factory: AtlasFactory = None):
         """Create a texture bin for holding atlases of the given size.
 
         :Parameters:
@@ -202,11 +206,13 @@ class TextureBin:
                 Width of texture atlases to create.
             `texture_height` : int
                 Height of texture atlases to create.
-
+            `atlas_factory` : AtlasFactory
+                Callable[[int, int], 'TextureAtlas'] that creates TextureAtlas.
         """
         max_texture_size = pyglet.image.get_max_texture_size()
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
+        self.atlas_factory = atlas_factory or (lambda width, height: TextureAtlas(width, height))
         self.atlases = []
 
     def add(self, img: 'AbstractImage', border: int = 0) -> 'TextureRegion':
@@ -237,7 +243,7 @@ class TextureBin:
                 if img.width < 64 and img.height < 64:
                     self.atlases.remove(atlas)
 
-        atlas = TextureAtlas(self.texture_width, self.texture_height)
+        atlas = self.atlas_factory(self.texture_width, self.texture_height)
         self.atlases.append(atlas)
         return atlas.add(img, border)
 

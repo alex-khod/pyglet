@@ -221,6 +221,22 @@ def _color_as_bytes(color):
     return bytes(color)
 
 
+def get_imdata_to_gl_format_mapping():
+    mapping = {
+        "R": GL_RED,
+        "G": GL_GREEN,
+        "B": GL_BLUE,
+        # No such thing for format value?
+        "A": GL_ALPHA,
+        "RG": GL_RG,
+        "RGB": GL_RGB,
+        "RGBA": GL_RGBA,
+        "BGR": GL_BGR,
+        "BGRA": GL_BGRA,
+    }
+    return mapping
+
+
 class ImagePattern:
     """Abstract image creation class."""
 
@@ -1238,7 +1254,8 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, blank_data=True):
+    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None,
+               blank_data=True):
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1293,7 +1310,7 @@ class Texture(AbstractImage):
 
         return texture
 
-    def get_image_data(self, z=0):
+    def get_image_data(self, z=0, image_data_fmt="RGBA"):
         """Get the image data of this texture.
 
         Changes to the returned instance will not be reflected in this
@@ -1307,12 +1324,10 @@ class Texture(AbstractImage):
         """
         glBindTexture(self.target, self.id)
 
-        # Always extract complete RGBA data.  Could check internalformat
-        # to only extract used channels. XXX
-        fmt = 'RGBA'
-        gl_format = GL_RGBA
+        mapping = get_imdata_to_gl_format_mapping()
+        gl_format = mapping[image_data_fmt]
 
-        buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
+        buf = (GLubyte * (self.width * self.height * self.images * len(image_data_fmt)))()
 
         # TODO: Clean up this temporary hack
         if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
@@ -1329,7 +1344,7 @@ class Texture(AbstractImage):
             glPixelStorei(GL_PACK_ALIGNMENT, 1)
             glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
 
-        data = ImageData(self.width, self.height, fmt, buf)
+        data = ImageData(self.width, self.height, image_data_fmt, buf)
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
