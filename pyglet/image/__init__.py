@@ -1238,7 +1238,7 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA, blank_data=True):
+    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, blank_data=True):
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1259,10 +1259,6 @@ class Texture(AbstractImage):
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
             `mag_filter` : int
                 The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `fmt` : int
-                GL constant giving format of texture; for example, ``GL_RGBA``.
-                The format specifies what format the pixel data we're expecting to write
-                to the texture and should ideally be the same as for internal format.
             `blank_data` : bool
                 Setting to True will initialize the texture data with all zeros. Setting False, will initialize Texture
                 with no data.
@@ -1284,7 +1280,8 @@ class Texture(AbstractImage):
                          internalformat,
                          width, height,
                          0,
-                         fmt,
+                         # for this data (blank) - always GL_RGBA
+                         GL_RGBA,
                          GL_UNSIGNED_BYTE,
                          blank)
             glFlush()
