@@ -202,9 +202,6 @@ class TextureBin:
                 Width of texture atlases to create.
             `texture_height` : int
                 Height of texture atlases to create.
-            `border` : int
-                Leaves specified pixels of blank space around
-                each image added to the Atlases.
 
         """
         max_texture_size = pyglet.image.get_max_texture_size()
